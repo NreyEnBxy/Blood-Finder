@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Blood Finder | Connect Blood Donors Across Bangladesh</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+  <style>
+    :root {
+      --primary: #e53935;
+      --primary-dark: #c62828;
+      --secondary: #ffebee;
+      --text: #333;
+      --text-light: #666;
+      --bg: #f9f9f9;
+      --card-bg: #fff;
+      --border: #e0e0e0;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    .header {
+      background: var(--primary);
+      color: white;
+      padding: 1rem 0;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      position: relative;
+      z-index: 10;
+    }
+
+    .header-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      font-size: 1.5rem;
+      font-weight: 600;
+      text-decoration: none;
+      color: white;
+    }
+
+    .logo i {
+      margin-right: 10px;
+      font-size: 1.8rem;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 2rem auto;
+      padding: 0 20px;
+      flex: 1;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    h2 {
+      color: var(--primary);
+      margin-bottom: 1.5rem;
+      font-size: 1.5rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+    }
+
+    h2 i {
+      margin-right: 10px;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    input, select {
+      width: 100%;
+      padding: 12px 15px;
+      font-size: 16px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      transition: all 0.3s ease;
+      background: white;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--primary);
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.2);
+    }
+
+    .btn {
+      display: inline-block;
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      font-weight: 500;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-align: center;
+      width: 100%;
+    }
+
+    .btn:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .donor-card {
+      background: white;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      border-left: 4px solid var(--primary);
+      transition: all 0.3s ease;
+    }
+
+    .donor-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+    }
+
+    .donor-card h3 {
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+      font-size: 1.2rem;
+    }
+
+    .donor-detail {
+      display: flex;
+      margin-bottom: 0.5rem;
+    }
+
+    .donor-detail i {
+      width: 24px;
+      color: var(--primary);
+      margin-right: 10px;
+    }
+
+    .availability {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      margin-top: 0.5rem;
+    }
+
+    .available {
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
+
+    .not-available {
+      background: #ffebee;
+      color: #c62828;
+    }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      margin: 2rem 0;
+    }
+
+    .divider::before, .divider::after {
+      content: "";
+      flex: 1;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .divider-text {
+      padding: 0 1rem;
+      color: var(--text-light);
+      font-size: 0.9rem;
+    }
+
+    .footer {
+      background: #2d2d2d;
+      color: white;
+      text-align: center;
+      padding: 2rem 0;
+      margin-top: 3rem;
+    }
+
+    .footer-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    .footer a {
+      color: white;
+      text-decoration: none;
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+
+    .footer a:hover {
+      color: var(--primary);
+    }
+
+    .social-links {
+      margin: 1rem 0;
+    }
+
+    .social-links a {
+      display: inline-block;
+      margin: 0 10px;
+      font-size: 1.2rem;
+    }
+
+    .copyright {
+      font-size: 0.9rem;
+      opacity: 0.8;
+    }
+
+    .no-results {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-light);
+    }
+
+    .no-results i {
+      font-size: 3rem;
+      color: var(--primary);
+      margin-bottom: 1rem;
+    }
+
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 1s ease-in-out infinite;
+      margin-left: 10px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 0 15px;
+      }
+      
+      .card {
+        padding: 1.5rem;
+      }
+      
+      h2 {
+        font-size: 1.3rem;
+      }
+    }
+
+    /* Animation classes */
+    .fade-in {
+      animation: fadeIn 0.5s ease forwards;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-content">
+    <a href="#" class="logo">
+      <i class="fas fa-tint"></i>
+      <span>Blood Finder</span>
+    </a>
+  </div>
+</header>
+
+<div class="container">
+  <div class="card fade-in">
+    <h2><i class="fas fa-user-plus"></i> Register as a Donor</h2>
+    
+    <div class="form-group">
+      <label for="bloodGroup">Blood Group</label>
+      <select id="bloodGroup" required>
+        <option value="">-- Select Blood Group --</option>
+        <option>A+</option><option>A-</option><option>B+</option><option>B-</option>
+        <option>AB+</option><option>AB-</option><option>O+</option><option>O-</option>
+      </select>
+    </div>
+    
+    <div class="form-group">
+      <label for="contact">Contact Information</label>
+      <input id="contact" placeholder="Phone number or email" required />
+    </div>
+    
+    <div class="form-group">
+      <label for="location">District</label>
+      <select id="location" required>
+        <option value="">-- Select District --</option>
+        <option>Bagerhat</option><option>Bandarban</option><option>Barguna</option><option>Barisal</option>
+        <option>Bhola</option><option>Bogra</option><option>Brahmanbaria</option><option>Chandpur</option>
+        <option>Chapai Nawabganj</option><option>Chattogram</option><option>Chuadanga</option><option>Comilla</option>
+        <option>Cox's Bazar</option><option>Dhaka</option><option>Dinajpur</option><option>Faridpur</option>
+        <option>Feni</option><option>Gaibandha</option><option>Gazipur</option><option>Gopalganj</option>
+        <option>Habiganj</option><option>Jamalpur</option><option>Jashore</option><option>Jhalokathi</option>
+        <option>Jhenaidah</option><option>Joypurhat</option><option>Khagrachari</option><option>Khulna</option>
+        <option>Kishoreganj</option><option>Kurigram</option><option>Kushtia</option><option>Lakshmipur</option>
+        <option>Lalmonirhat</option><option>Madaripur</option><option>Magura</option><option>Manikganj</option>
+        <option>Meherpur</option><option>Moulvibazar</option><option>Munshiganj</option><option>Mymensingh</option>
+        <option>Naogaon</option><option>Narail</option><option>Narayanganj</option><option>Narsingdi</option>
+        <option>Natore</option><option>Netrokona</option><option>Nilphamari</option><option>Noakhali</option>
+        <option>Pabna</option><option>Panchagarh</option><option>Patuakhali</option><option>Pirojpur</option>
+        <option>Rajbari</option><option>Rajshahi</option><option>Rangamati</option><option>Rangpur</option>
+        <option>Satkhira</option><option>Shariatpur</option><option>Sherpur</option><option>Sirajganj</option>
+        <option>Sunamganj</option><option>Sylhet</option><option>Tangail</option><option>Thakurgaon</option>
+      </select>
+    </div>
+    
+    <div class="form-group">
+      <label for="donationDate">Last Donation Date</label>
+      <input type="date" id="donationDate" required />
+    </div>
+    
+    <div class="form-group">
+      <label for="availability">Currently Available to Donate</label>
+      <select id="availability" required>
+        <option value="">-- Select Availability --</option>
+        <option value="Yes">Yes, I'm available</option>
+        <option value="No">Not available right now</option>
+      </select>
+    </div>
+    
+    <button class="btn" onclick="registerDonor()" id="registerBtn">
+      <span>Register as Donor</span>
+    </button>
+  </div>
+
+  <div class="divider">
+    <span class="divider-text">OR</span>
+  </div>
+
+  <div class="card fade-in">
+    <h2><i class="fas fa-search"></i> Find Blood Donors</h2>
+    
+    <div class="form-group">
+      <label for="searchGroup">Blood Group Needed</label>
+      <select id="searchGroup">
+        <option value="">-- Select Blood Group --</option>
+        <option>A+</option><option>A-</option><option>B+</option><option>B-</option>
+        <option>AB+</option><option>AB-</option><option>O+</option><option>O-</option>
+      </select>
+    </div>
+    
+    <div class="form-group">
+      <label for="searchLocation">Search by District</label>
+      <select id="searchLocation">
+        <option value="">-- Any District --</option>
+        <option>Bagerhat</option><option>Bandarban</option><option>Barguna</option><option>Barisal</option>
+        <option>Bhola</option><option>Bogra</option><option>Brahmanbaria</option><option>Chandpur</option>
+        <option>Chapai Nawabganj</option><option>Chattogram</option><option>Chuadanga</option><option>Comilla</option>
+        <option>Cox's Bazar</option><option>Dhaka</option><option>Dinajpur</option><option>Faridpur</option>
+        <option>Feni</option><option>Gaibandha</option><option>Gazipur</option><option>Gopalganj</option>
+        <option>Habiganj</option><option>Jamalpur</option><option>Jashore</option><option>Jhalokathi</option>
+        <option>Jhenaidah</option><option>Joypurhat</option><option>Khagrachari</option><option>Khulna</option>
+        <option>Kishoreganj</option><option>Kurigram</option><option>Kushtia</option><option>Lakshmipur</option>
+        <option>Lalmonirhat</option><option>Madaripur</option><option>Magura</option><option>Manikganj</option>
+        <option>Meherpur</option><option>Moulvibazar</option><option>Munshiganj</option><option>Mymensingh</option>
+        <option>Naogaon</option><option>Narail</option><option>Narayanganj</option><option>Narsingdi</option>
+        <option>Natore</option><option>Netrokona</option><option>Nilphamari</option><option>Noakhali</option>
+        <option>Pabna</option><option>Panchagarh</option><option>Patuakhali</option><option>Pirojpur</option>
+        <option>Rajbari</option><option>Rajshahi</option><option>Rangamati</option><option>Rangpur</option>
+        <option>Satkhira</option><option>Shariatpur</option><option>Sherpur</option><option>Sirajganj</option>
+        <option>Sunamganj</option><option>Sylhet</option><option>Tangail</option><option>Thakurgaon</option>
+      </select>
+    </div>
+    
+    <button class="btn" onclick="searchDonors()" id="searchBtn">
+      <span>Search Donors</span>
+    </button>
+    
+    <div id="results" class="fade-in"></div>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="footer-content">
+    <h3>Blood Finder</h3>
+    <p>Connecting blood donors with those in need across Bangladesh</p>
+    
+    <div class="social-links">
+      <a href="https://facebook.com/prodby.arafat" target="_blank"><i class="fab fa-facebook"></i></a>
+      <a href="https://x.com/weirdarafat69?t=UC2MCzggukQLtzM6rT0eYg&s=09"><i class="fab fa-twitter"></i></a>
+      <a href="https://www.instagram.com/thecyber.arafat?igsh=MW1nOGE1YXY0djd2Mg=="><i class="fab fa-instagram"></i></a>
+    </div>
+    
+    <p class="copyright">
+      &copy; 2025 Blood Finder. All rights reserved. 
+      <br>Developed with <i class="fas fa-heart" style="color: var(--primary);"></i> by <a href="https://facebook.com/prodby.arafat" target="_blank">Arafat</a>
+    </p>
+  </div>
+</footer>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyAXQzarx_UVoGZXJpRIEdvuefuOhpzKw-s",
+    authDomain: "blood-finder-161e9.firebaseapp.com",
+    projectId: "blood-finder-161e9",
+    storageBucket: "blood-finder-161e9.firebasestorage.app",
+    messagingSenderId: "163391223313",
+    appId: "1:163391223313:web:d87e56090ec6a4c52a23b0"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  function showLoading(btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span>' + btn.textContent + '</span> <div class="loading"></div>';
+  }
+
+  function hideLoading(btn, text) {
+    btn.disabled = false;
+    btn.innerHTML = '<span>' + text + '</span>';
+  }
+
+  function registerDonor() {
+    const bloodGroup = document.getElementById("bloodGroup").value;
+    const contact = document.getElementById("contact").value.trim();
+    const location = document.getElementById("location").value;
+    const donationDate = document.getElementById("donationDate").value;
+    const availability = document.getElementById("availability").value;
+    const registerBtn = document.getElementById("registerBtn");
+
+    if (!bloodGroup || !contact || !location || !donationDate || !availability) {
+      alert("Please fill all required fields.");
+      return;
+    }
+
+    showLoading(registerBtn);
+
+    db.collection("donors").add({
+      bloodGroup, 
+      contact, 
+      location, 
+      donationDate, 
+      availability,
+      timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    }).then(() => {
+      alert("Thank you for registering as a donor! Your information may save lives.");
+      document.getElementById("bloodGroup").value = '';
+      document.getElementById("contact").value = '';
+      document.getElementById("location").value = '';
+      document.getElementById("donationDate").value = '';
+      document.getElementById("availability").value = '';
+    }).catch(error => {
+      alert("Error registering donor: " + error);
+    }).finally(() => {
+      hideLoading(registerBtn, "Register as Donor");
+    });
+  }
+
+  function searchDonors() {
+    const group = document.getElementById("searchGroup").value;
+    const location = document.getElementById("searchLocation").value;
+    const resultsDiv = document.getElementById("results");
+    const searchBtn = document.getElementById("searchBtn");
+
+    showLoading(searchBtn);
+    resultsDiv.innerHTML = '<div class="no-results"><i class="fas fa-spinner fa-spin"></i><p>Searching for donors...</p></div>';
+
+    let query = db.collection("donors").orderBy("timestamp", "desc");
+    
+    if (group) query = query.where("bloodGroup", "==", group);
+    if (location) query = query.where("location", "==", location);
+
+    query.get()
+      .then(snapshot => {
+        resultsDiv.innerHTML = "";
+        
+        if (snapshot.empty) {
+          resultsDiv.innerHTML = `
+            <div class="no-results">
+              <i class="fas fa-exclamation-circle"></i>
+              <h3>No donors found</h3>
+              <p>We couldn't find any matching donors. Please try different search criteria or check back later.</p>
+            </div>
+          `;
+          return;
+        }
+
+        snapshot.forEach(doc => {
+          const d = doc.data();
+          const div = document.createElement("div");
+          div.className = "donor-card fade-in";
+          div.innerHTML = `
+            <h3>${d.bloodGroup} Blood Donor</h3>
+            <div class="donor-detail">
+              <i class="fas fa-phone"></i>
+              <span>${d.contact}</span>
+            </div>
+            <div class="donor-detail">
+              <i class="fas fa-map-marker-alt"></i>
+              <span>${d.location} District</span>
+            </div>
+            <div class="donor-detail">
+              <i class="fas fa-calendar-alt"></i>
+              <span>Last donated: ${d.donationDate || 'Not specified'}</span>
+            </div>
+            <div class="availability ${d.availability === 'Yes' ? 'available' : 'not-available'}">
+              <i class="fas ${d.availability === 'Yes' ? 'fa-check-circle' : 'fa-times-circle'}"></i>
+              ${d.availability === 'Yes' ? 'Available to donate' : 'Currently unavailable'}
+            </div>
+          `;
+          resultsDiv.appendChild(div);
+        });
+      })
+      .catch(error => {
+        resultsDiv.innerHTML = `
+          <div class="no-results">
+            <i class="fas fa-exclamation-triangle"></i>
+            <h3>Error searching donors</h3>
+            <p>${error.message}</p>
+          </div>
+        `;
+      })
+      .finally(() => {
+        hideLoading(searchBtn, "Search Donors");
+      });
+  }
+</script>
+
+</body>
+</html>
