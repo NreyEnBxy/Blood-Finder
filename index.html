@@ -3,13 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Blood Finder | Connect Blood Donors Across Bangladesh</title>
+  <title>Blood Finder | Secure Blood Donor Platform</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
   <style>
     :root {
       --primary: #e53935;
@@ -20,6 +21,9 @@
       --bg: #f9f9f9;
       --card-bg: #fff;
       --border: #e0e0e0;
+      --success: #43a047;
+      --info: #1976d2;
+      --warning: #ffa000;
     }
 
     * {
@@ -46,7 +50,7 @@
       padding: 1rem 0;
       box-shadow: 0 2px 10px rgba(0,0,0,0.1);
       position: relative;
-      z-index: 10;
+      z-index: 100;
     }
 
     .header-content {
@@ -70,6 +74,57 @@
     .logo i {
       margin-right: 10px;
       font-size: 1.8rem;
+    }
+
+    .auth-buttons {
+      display: flex;
+      gap: 10px;
+    }
+
+    .auth-btn {
+      background: rgba(255,255,255,0.2);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .auth-btn:hover {
+      background: rgba(255,255,255,0.3);
+    }
+
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .user-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: white;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+    }
+
+    .user-name {
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .logout-btn {
+      background: none;
+      border: none;
+      color: white;
+      cursor: pointer;
+      font-size: 20px;
     }
 
     .container {
@@ -152,6 +207,31 @@
       transform: translateY(0);
     }
 
+    .btn-secondary {
+      background: #f5f5f5;
+      color: var(--text);
+    }
+
+    .btn-secondary:hover {
+      background: #e0e0e0;
+    }
+
+    .btn-success {
+      background: var(--success);
+    }
+
+    .btn-success:hover {
+      background: #388e3c;
+    }
+
+    .btn-info {
+      background: var(--info);
+    }
+
+    .btn-info:hover {
+      background: #1565c0;
+    }
+
     .donor-card {
       background: white;
       border-radius: 8px;
@@ -201,6 +281,20 @@
     .not-available {
       background: #ffebee;
       color: #c62828;
+    }
+
+    .contact-info {
+      background: var(--secondary);
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 10px;
+      font-weight: 500;
+    }
+
+    .request-contact {
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px dashed var(--border);
     }
 
     .divider {
@@ -288,6 +382,128 @@
       to { transform: rotate(360deg); }
     }
 
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 400px;
+      padding: 2rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      position: relative;
+    }
+
+    .close-modal {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #999;
+    }
+
+    .modal-tabs {
+      display: flex;
+      margin-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .modal-tab {
+      padding: 10px 20px;
+      cursor: pointer;
+      font-weight: 500;
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s ease;
+    }
+
+    .modal-tab.active {
+      border-bottom: 3px solid var(--primary);
+      color: var(--primary);
+    }
+
+    .modal-form {
+      display: none;
+    }
+
+    .modal-form.active {
+      display: block;
+    }
+
+    .form-footer {
+      margin-top: 1rem;
+      text-align: center;
+      font-size: 14px;
+    }
+
+    .form-footer a {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 15px 25px;
+      border-radius: 8px;
+      background: white;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      transform: translateX(120%);
+      transition: transform 0.3s ease;
+    }
+
+    .notification.show {
+      transform: translateX(0);
+    }
+
+    .notification i {
+      margin-right: 10px;
+      font-size: 1.2rem;
+    }
+
+    .notification.success {
+      border-left: 4px solid var(--success);
+    }
+
+    .notification.error {
+      border-left: 4px solid var(--primary);
+    }
+
+    .notification.info {
+      border-left: 4px solid var(--info);
+    }
+
+    .privacy-notice {
+      background: #e3f2fd;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+      font-size: 0.9rem;
+    }
+
+    .privacy-notice i {
+      color: var(--info);
+      margin-right: 8px;
+    }
+
     @media (max-width: 768px) {
       .container {
         padding: 0 15px;
@@ -299,6 +515,17 @@
       
       h2 {
         font-size: 1.3rem;
+      }
+      
+      .header-content {
+        flex-wrap: wrap;
+      }
+      
+      .auth-buttons {
+        order: 3;
+        width: 100%;
+        margin-top: 10px;
+        justify-content: center;
       }
     }
 
@@ -321,10 +548,22 @@
       <i class="fas fa-tint"></i>
       <span>Blood Finder</span>
     </a>
+    
+    <div id="authSection">
+      <div class="auth-buttons">
+        <button class="auth-btn" onclick="openModal('login')">Login</button>
+        <button class="auth-btn" onclick="openModal('signup')">Sign Up</button>
+      </div>
+    </div>
   </div>
 </header>
 
 <div class="container">
+  <div class="privacy-notice fade-in">
+    <i class="fas fa-shield-alt"></i>
+    <strong>Privacy Protection:</strong> Contact information for signed-up donors is protected. Only registered users can see contacts of signed-up donors.
+  </div>
+  
   <div class="card fade-in">
     <h2><i class="fas fa-user-plus"></i> Register as a Donor</h2>
     
@@ -449,30 +688,253 @@
   </div>
 </footer>
 
+<!-- Auth Modal -->
+<div class="modal" id="authModal">
+  <div class="modal-content">
+    <button class="close-modal" onclick="closeModal()">&times;</button>
+    
+    <div class="modal-tabs">
+      <div class="modal-tab active" data-tab="login">Login</div>
+      <div class="modal-tab" data-tab="signup">Sign Up</div>
+    </div>
+    
+    <div class="modal-form active" id="loginForm">
+      <div class="form-group">
+        <label for="loginEmail">Email</label>
+        <input type="email" id="loginEmail" placeholder="Enter your email">
+      </div>
+      
+      <div class="form-group">
+        <label for="loginPassword">Password</label>
+        <input type="password" id="loginPassword" placeholder="Enter your password">
+      </div>
+      
+      <button class="btn" onclick="login()">Login</button>
+      
+      <div class="form-footer">
+        <p>Don't have an account? <a href="#" onclick="switchTab('signup')">Sign Up</a></p>
+      </div>
+    </div>
+    
+    <div class="modal-form" id="signupForm">
+      <div class="form-group">
+        <label for="signupName">Full Name</label>
+        <input type="text" id="signupName" placeholder="Enter your full name">
+      </div>
+      
+      <div class="form-group">
+        <label for="signupEmail">Email</label>
+        <input type="email" id="signupEmail" placeholder="Enter your email">
+      </div>
+      
+      <div class="form-group">
+        <label for="signupPassword">Password</label>
+        <input type="password" id="signupPassword" placeholder="Create a password (min 6 characters)">
+      </div>
+      
+      <div class="form-group">
+        <label for="signupPhone">Phone Number</label>
+        <input type="tel" id="signupPhone" placeholder="Enter your phone number">
+      </div>
+      
+      <button class="btn" onclick="signup()">Create Account</button>
+      
+      <div class="form-footer">
+        <p>Already have an account? <a href="#" onclick="switchTab('login')">Login</a></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Notification Container -->
+<div id="notificationContainer"></div>
+
 <script>
+  // Firebase Configuration
   const firebaseConfig = {
     apiKey: "AIzaSyAXQzarx_UVoGZXJpRIEdvuefuOhpzKw-s",
     authDomain: "blood-finder-161e9.firebaseapp.com",
     projectId: "blood-finder-161e9",
-    storageBucket: "blood-finder-161e9.firebasestorage.app",
+    storageBucket: "blood-finder-161e9.appspot.com",
     messagingSenderId: "163391223313",
     appId: "1:163391223313:web:d87e56090ec6a4c52a23b0"
   };
 
+  // Initialize Firebase
   firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
-
+  const auth = firebase.auth();
+  
+  // Global variables
+  let currentUser = null;
+  let notificationTimeout;
+  
+  // DOM Elements
+  const authSection = document.getElementById('authSection');
+  
+  // Initialize the app
+  function initApp() {
+    auth.onAuthStateChanged(user => {
+      currentUser = user;
+      updateAuthUI();
+      // Automatically search donors when user logs in/out
+      searchDonors();
+    });
+  }
+  
+  // Update UI based on authentication state
+  function updateAuthUI() {
+    if (currentUser) {
+      const displayName = currentUser.displayName || currentUser.email.split('@')[0];
+      const firstLetter = displayName.charAt(0).toUpperCase();
+      
+      authSection.innerHTML = `
+        <div class="user-profile">
+          <div class="user-avatar">${firstLetter}</div>
+          <div class="user-name">${displayName}</div>
+          <button class="logout-btn" onclick="logout()">
+            <i class="fas fa-sign-out-alt"></i>
+          </button>
+        </div>
+      `;
+    } else {
+      authSection.innerHTML = `
+        <div class="auth-buttons">
+          <button class="auth-btn" onclick="openModal('login')">Login</button>
+          <button class="auth-btn" onclick="openModal('signup')">Sign Up</button>
+        </div>
+      `;
+    }
+  }
+  
+  // Open auth modal
+  function openModal(tab) {
+    document.getElementById('authModal').style.display = 'flex';
+    switchTab(tab);
+  }
+  
+  // Close modal
+  function closeModal() {
+    document.getElementById('authModal').style.display = 'none';
+  }
+  
+  // Switch between login/signup tabs
+  function switchTab(tab) {
+    document.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.modal-form').forEach(f => f.classList.remove('active'));
+    
+    document.querySelector(`.modal-tab[data-tab="${tab}"]`).classList.add('active');
+    document.getElementById(`${tab}Form`).classList.add('active');
+  }
+  
+  // Login function
+  function login() {
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+    
+    if (!email || !password) {
+      showNotification('Please enter both email and password', 'error');
+      return;
+    }
+    
+    auth.signInWithEmailAndPassword(email, password)
+      .then(() => {
+        showNotification('Login successful!', 'success');
+        closeModal();
+      })
+      .catch(error => {
+        showNotification(`Login failed: ${error.message}`, 'error');
+      });
+  }
+  
+  // Signup function
+  function signup() {
+    const name = document.getElementById('signupName').value;
+    const email = document.getElementById('signupEmail').value;
+    const password = document.getElementById('signupPassword').value;
+    const phone = document.getElementById('signupPhone').value;
+    
+    if (!name || !email || !password || !phone) {
+      showNotification('Please fill all fields', 'error');
+      return;
+    }
+    
+    if (password.length < 6) {
+      showNotification('Password must be at least 6 characters', 'error');
+      return;
+    }
+    
+    auth.createUserWithEmailAndPassword(email, password)
+      .then(cred => {
+        return cred.user.updateProfile({
+          displayName: name
+        });
+      })
+      .then(() => {
+        showNotification('Account created successfully!', 'success');
+        closeModal();
+      })
+      .catch(error => {
+        showNotification(`Signup failed: ${error.message}`, 'error');
+      });
+  }
+  
+  // Logout function
+  function logout() {
+    auth.signOut()
+      .then(() => {
+        showNotification('Logged out successfully', 'success');
+      })
+      .catch(error => {
+        showNotification(`Logout failed: ${error.message}`, 'error');
+      });
+  }
+  
+  // Show notification (3 seconds duration)
+  function showNotification(message, type) {
+    // Clear any existing timeout
+    if (notificationTimeout) clearTimeout(notificationTimeout);
+    
+    const container = document.getElementById('notificationContainer');
+    const notification = document.createElement('div');
+    
+    notification.className = `notification ${type} show`;
+    notification.innerHTML = `
+      <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+      <span>${message}</span>
+    `;
+    
+    container.appendChild(notification);
+    
+    // Auto remove after 3 seconds
+    notificationTimeout = setTimeout(() => {
+      notification.classList.remove('show');
+      setTimeout(() => {
+        notification.remove();
+      }, 300);
+    }, 3000);
+  }
+  
+  // Show loading state on buttons
   function showLoading(btn) {
     btn.disabled = true;
     btn.innerHTML = '<span>' + btn.textContent + '</span> <div class="loading"></div>';
   }
 
+  // Hide loading state
   function hideLoading(btn, text) {
     btn.disabled = false;
     btn.innerHTML = '<span>' + text + '</span>';
   }
 
+  // Register as donor
   function registerDonor() {
+    if (!currentUser) {
+      showNotification('Please login to register as a donor', 'error');
+      openModal('login');
+      return;
+    }
+    
     const bloodGroup = document.getElementById("bloodGroup").value;
     const contact = document.getElementById("contact").value.trim();
     const location = document.getElementById("location").value;
@@ -481,7 +943,7 @@
     const registerBtn = document.getElementById("registerBtn");
 
     if (!bloodGroup || !contact || !location || !donationDate || !availability) {
-      alert("Please fill all required fields.");
+      showNotification('Please fill all required fields', 'error');
       return;
     }
 
@@ -493,28 +955,37 @@
       location, 
       donationDate, 
       availability,
+      userId: currentUser.uid,
       timestamp: firebase.firestore.FieldValue.serverTimestamp()
     }).then(() => {
-      alert("Thank you for registering as a donor! Your information may save lives.");
+      showNotification('Thank you for registering as a donor! Your information may save lives.', 'success');
+      
+      // Clear form
       document.getElementById("bloodGroup").value = '';
       document.getElementById("contact").value = '';
       document.getElementById("location").value = '';
       document.getElementById("donationDate").value = '';
       document.getElementById("availability").value = '';
+      
+      // Auto-reload donor list
+      searchDonors();
     }).catch(error => {
-      alert("Error registering donor: " + error);
+      showNotification('Error registering donor: ' + error, 'error');
     }).finally(() => {
       hideLoading(registerBtn, "Register as Donor");
     });
   }
 
+  // Search for donors
   function searchDonors() {
     const group = document.getElementById("searchGroup").value;
     const location = document.getElementById("searchLocation").value;
     const resultsDiv = document.getElementById("results");
     const searchBtn = document.getElementById("searchBtn");
 
-    showLoading(searchBtn);
+    // Only show loading if we have a search button
+    if (searchBtn) showLoading(searchBtn);
+    
     resultsDiv.innerHTML = '<div class="no-results"><i class="fas fa-spinner fa-spin"></i><p>Searching for donors...</p></div>';
 
     let query = db.collection("donors").orderBy("timestamp", "desc");
@@ -541,12 +1012,15 @@
           const d = doc.data();
           const div = document.createElement("div");
           div.className = "donor-card fade-in";
+          
+          // Check if donor is "old" (registered before privacy feature)
+          const isOldDonor = !d.userId;
+          
+          // Check if current user can see contact info
+          const canSeeContact = isOldDonor || currentUser;
+          
           div.innerHTML = `
             <h3>${d.bloodGroup} Blood Donor</h3>
-            <div class="donor-detail">
-              <i class="fas fa-phone"></i>
-              <span>${d.contact}</span>
-            </div>
             <div class="donor-detail">
               <i class="fas fa-map-marker-alt"></i>
               <span>${d.location} District</span>
@@ -559,7 +1033,21 @@
               <i class="fas ${d.availability === 'Yes' ? 'fa-check-circle' : 'fa-times-circle'}"></i>
               ${d.availability === 'Yes' ? 'Available to donate' : 'Currently unavailable'}
             </div>
+            
+            ${canSeeContact ? `
+              <div class="contact-info">
+                <i class="fas fa-phone"></i> ${d.contact}
+              </div>
+            ` : `
+              <div class="request-contact">
+                <p><i class="fas fa-lock"></i> Contact information is protected</p>
+                <button class="btn btn-info" onclick="openModal('signup')">
+                  <i class="fas fa-user-plus"></i> Sign Up to View Contact
+                </button>
+              </div>
+            `}
           `;
+          
           resultsDiv.appendChild(div);
         });
       })
@@ -573,9 +1061,12 @@
         `;
       })
       .finally(() => {
-        hideLoading(searchBtn, "Search Donors");
+        if (searchBtn) hideLoading(searchBtn, "Search Donors");
       });
   }
+
+  // Initialize the app
+  window.addEventListener('DOMContentLoaded', initApp);
 </script>
 
 </body>
